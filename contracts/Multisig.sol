@@ -8,7 +8,6 @@ contract Multisig {
     uint256 public txCount;
 
     struct Transaction {
-        uint256 id;
         uint256 amount;
         address sender;
         address recipient;
@@ -27,7 +26,7 @@ contract Multisig {
         address[] transactionSigners;
     }
 
-    mapping(address => bool) isValidSigner;
+    mapping(address => bool) public isValidSigner;
     mapping(uint => Transaction) transactions; // txId -> Transaction
     // signer -> transactionId -> bool (checking if an address has signed)
     mapping(address => mapping(uint256 => bool)) hasSigned;
@@ -80,7 +79,6 @@ contract Multisig {
         uint256 _txId = txCount + 1;
         Transaction storage trx = transactions[_txId];
         
-        trx.id = _txId;
         trx.amount = _amount;
         trx.recipient = _recipient;
         trx.sender = msg.sender;
@@ -96,7 +94,7 @@ contract Multisig {
     function approveTx(uint8 _txId) external {
         Transaction storage trx = transactions[_txId];
 
-        require(trx.id != 0, "invalid tx id");
+        require(_txId != 0, "invalid tx id");
         require(IERC20(trx.tokenAddress).balanceOf(address(this)) >= trx.amount, "insufficient funds");
         require(!trx.isCompleted, "transaction already completed");
         require(trx.noOfApproval < quorum, "approvals already reached");
@@ -118,6 +116,7 @@ contract Multisig {
         require(isValidSigner[msg.sender], "unauthorized access");
         require(_quorum != quorum, "new quorum must not be old");
         require(_quorum <= noOfValidSigners, "quorum cant be higher than noOfValidSigners");
+        require(_quorum != 0, "quorum cant be 0");
         
         uint256 _reqId = txCount + 1;
         UpdateStat storage req = updateRequests[_reqId];
@@ -151,7 +150,7 @@ contract Multisig {
     }
 
     function getRequests(uint8 _reqId) external view returns(UpdateStat memory) {
-             require(msg.sender != address(0), "address zero found");
+        require(msg.sender != address(0), "address zero found");
         require(isValidSigner[msg.sender], "unathorized access");
         require(_reqId != 0, "invalid tx id");
 
