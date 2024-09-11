@@ -101,7 +101,7 @@ describe("Multisig", () => {
 
       await multisig.transfer(txAmount, newAccount1, token);
       const trx = await multisig.getTransaction(1);
-      expect(trx.isCompleted).to.equal(false);
+      expect(trx.details.isCompleted).to.equal(false);
     });
 
     it("should not allow address 0 as any address input", async () => {
@@ -143,7 +143,7 @@ describe("Multisig", () => {
 
       await multisig.connect(signer2).approveTx(1);
       const trx = await multisig.getTransaction(1);
-      expect(trx.noOfApproval).to.equal(2);
+      expect(trx.details.noOfApproval).to.equal(2);
     });
 
     it("should complete a transaction when all signers sign", async () => {
@@ -164,7 +164,7 @@ describe("Multisig", () => {
 
       await multisig.connect(signer2).approveTx(1);
       const trx = await multisig.getTransaction(1);
-      expect(trx.isCompleted).to.equal(true);
+      expect(trx.details.isCompleted).to.equal(true);
       expect(await token.balanceOf(recipient)).to.greaterThanOrEqual(txAmount);
     });
 
@@ -268,7 +268,7 @@ describe("Multisig", () => {
       await multisig.connect(signer2).approveUpdate(1);
 
       const req = await multisig.getRequests(1);
-      expect(req.noOfApproval).to.equal(2);
+      expect(req.details.noOfApproval).to.equal(2);
     });
 
     it("should update the quorum when all signers sign", async () => {
@@ -278,7 +278,7 @@ describe("Multisig", () => {
       await multisig.connect(signer2).approveUpdate(1);
 
       const req = await multisig.getRequests(1);
-      expect(req.isCompleted).to.equal(true);
+      expect(req.details.isCompleted).to.equal(true);
       expect(await multisig.quorum()).to.equal(1);
     });
 

@@ -11,15 +11,16 @@ contract Multisig {
         uint256 amount;
         address sender;
         address recipient;
-        bool isCompleted;
-        uint256 timestamp;
-        uint256 noOfApproval;
         address tokenAddress;
-        address[] transactionSigners;
+        BaseDetails details;
     }
 
     struct UpdateStat {
         uint8 newQuorum;
+        BaseDetails details;
+    }
+
+    struct BaseDetails {
         bool isCompleted;
         uint256 timestamp;
         uint256 noOfApproval;
@@ -27,7 +28,7 @@ contract Multisig {
     }
 
     mapping(address => bool) public isValidSigner;
-    mapping(uint => Transaction) transactions; // txId -> Transaction
+    mapping(uint => Transaction) transactions;
     // signer -> transactionId -> bool (checking if an address has signed)
     mapping(address => mapping(uint256 => bool)) hasSigned;
 
@@ -82,10 +83,10 @@ contract Multisig {
         trx.amount = _amount;
         trx.recipient = _recipient;
         trx.sender = msg.sender;
-        trx.timestamp = block.timestamp;
         trx.tokenAddress = _tokenAddress;
-        trx.noOfApproval += 1;
-        trx.transactionSigners.push(msg.sender);
+        trx.details.timestamp = block.timestamp;
+        trx.details.transactionSigners.push(msg.sender);
+        trx.details.noOfApproval += 1;
         hasSigned[msg.sender][_txId] = true;
 
         txCount += 1;
@@ -96,17 +97,19 @@ contract Multisig {
 
         require(_txId != 0, "invalid tx id");
         require(IERC20(trx.tokenAddress).balanceOf(address(this)) >= trx.amount, "insufficient funds");
-        require(!trx.isCompleted, "transaction already completed");
-        require(trx.noOfApproval < quorum, "approvals already reached");
+        require(!trx.details.isCompleted, "transaction already completed");
+        require(trx.details.noOfApproval < quorum, "approvals already reached");
         require(isValidSigner[msg.sender], "not a valid signer");
         require(!hasSigned[msg.sender][_txId], "can't sign twice");
 
-        hasSigned[msg.sender][_txId] = true;
-        trx.noOfApproval += 1;
-        trx.transactionSigners.push(msg.sender);
+        BaseDetails storage details = trx.details;
 
-        if(trx.noOfApproval == quorum) {
-            trx.isCompleted = true;
+        hasSigned[msg.sender][_txId] = true;
+        details.noOfApproval += 1;
+        details.transactionSigners.push(msg.sender);
+
+        if(details.noOfApproval == quorum) {
+            details.isCompleted = true;
             IERC20(trx.tokenAddress).transfer(trx.recipient, trx.amount);
         }
     }
@@ -122,9 +125,9 @@ contract Multisig {
         UpdateStat storage req = updateRequests[_reqId];
 
         req.newQuorum = _quorum;
-        req.timestamp = block.timestamp;
-        req.noOfApproval = req.noOfApproval + 1;
-        req.transactionSigners.push(msg.sender);
+        req.details.timestamp = block.timestamp;
+        req.details.noOfApproval = req.details.noOfApproval + 1;
+        req.details.transactionSigners.push(msg.sender);
 
         hasSigned[msg.sender][_reqId] = true;
         txCount += 1;
@@ -134,17 +137,17 @@ contract Multisig {
         UpdateStat storage req = updateRequests[_reqId];
 
         require(_reqId != 0, "invalid tx id");
-        require(!req.isCompleted, "request already done");
-        require(req.noOfApproval < quorum, "approvals already reached");
+        require(!req.details.isCompleted, "request already done");
+        require(req.details.noOfApproval < quorum, "approvals already reached");
         require(isValidSigner[msg.sender], "not a valid signer");
         require(!hasSigned[msg.sender][_reqId], "can't sign twice");
 
         hasSigned[msg.sender][_reqId] = true;
-        req.noOfApproval = req.noOfApproval + 1;
-        req.transactionSigners.push(msg.sender);
+        req.details.noOfApproval = req.details.noOfApproval + 1;
+        req.details.transactionSigners.push(msg.sender);
 
-        if(req.noOfApproval == quorum) {
-            req.isCompleted = true;
+        if(req.details.noOfApproval == quorum) {
+            req.details.isCompleted = true;
             quorum = req.newQuorum;
         }
     }
