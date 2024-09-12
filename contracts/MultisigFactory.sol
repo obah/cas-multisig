@@ -7,11 +7,11 @@ contract MultisigFactory {
 
     Multisig[] multisigClones;
 
-    function createMultisigWallet(uint256 _quorum, address[] memory _validSigners) external returns (Multisig newMulsig_, uint256 length_) {
+    function createMultisigWallet(uint8 _quorum, address[] memory _validSigners) external returns (Multisig newMultisig_, uint256 length_) {
 
-        newMulsig_ = new Multisig(_quorum, _validSigners);
+        newMultisig_ = new Multisig(_quorum, _validSigners);
 
-        multisigClones.push(newMulsig_);
+        multisigClones.push(newMultisig_);
 
         length_ = multisigClones.length;
     }

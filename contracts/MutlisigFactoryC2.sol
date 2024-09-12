@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "./Multisig.sol";
 
-contract MultisigFactory {
+contract MultisigFactoryC2 {
     event ContractDeployed(address indexed contractAddress);
 
     address[] public contractAddresses;
