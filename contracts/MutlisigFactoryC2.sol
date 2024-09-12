@@ -11,11 +11,16 @@ contract MultisigFactoryC2 {
     function createContract(
         bytes memory _bytecode,
         uint256 _salt
-    ) external returns ( uint256 length_) {
+    ) external returns (uint256 length_) {
         address contractAddress;
 
         assembly {
-            contractAddress := create2(0, add(_bytecode, 0x20), mload(_bytecode), _salt)
+            contractAddress := create2(
+                0,
+                add(_bytecode, 0x20),
+                mload(_bytecode),
+                _salt
+            )
             if iszero(extcodesize(contractAddress)) {
                 revert(0, 0)
             }
@@ -27,7 +32,7 @@ contract MultisigFactoryC2 {
         emit ContractDeployed(contractAddress);
     }
 
-    function getContracts() external view returns(address[] memory) {
+    function getContracts() external view returns (address[] memory) {
         return contractAddresses;
     }
 }

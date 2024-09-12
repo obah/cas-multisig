@@ -38,8 +38,7 @@ contract Multisig {
         require(_validSigners.length > 1, "few valid signers");
         require(_quorum > 1, "quorum is too small");
 
-
-        for(uint256 i = 0; i < _validSigners.length; i++) {
+        for (uint256 i = 0; i < _validSigners.length; i++) {
             require(_validSigners[i] != address(0), "zero address not allowed");
             require(!isValidSigner[_validSigners[i]], "signer already exist");
 
@@ -48,17 +47,22 @@ contract Multisig {
 
         noOfValidSigners = uint8(_validSigners.length);
 
-        if (!isValidSigner[msg.sender]){
+        if (!isValidSigner[msg.sender]) {
             isValidSigner[msg.sender] = true;
             noOfValidSigners += 1;
         }
 
-        require(_quorum <= noOfValidSigners, "quorum greater than valid signers");
+        require(
+            _quorum <= noOfValidSigners,
+            "quorum greater than valid signers"
+        );
         quorum = _quorum;
     }
 
-    function getTransaction(uint256 _txId) external view returns(Transaction memory) {
-         require(msg.sender != address(0), "address zero found");
+    function getTransaction(
+        uint256 _txId
+    ) external view returns (Transaction memory) {
+        require(msg.sender != address(0), "address zero found");
         require(isValidSigner[msg.sender], "unathorized access");
         require(_txId != 0, "invalid tx id");
 
@@ -67,7 +71,11 @@ contract Multisig {
         return trx;
     }
 
-    function transfer(uint256 _amount, address _recipient, address _tokenAddress) external {
+    function transfer(
+        uint256 _amount,
+        address _recipient,
+        address _tokenAddress
+    ) external {
         require(msg.sender != address(0), "address zero found");
         require(isValidSigner[msg.sender], "invalid signer");
 
@@ -75,11 +83,14 @@ contract Multisig {
         require(_recipient != address(0), "address zero found");
         require(_tokenAddress != address(0), "address zero found");
 
-        require(IERC20(_tokenAddress).balanceOf(address(this)) >= _amount, "insufficient funds");
+        require(
+            IERC20(_tokenAddress).balanceOf(address(this)) >= _amount,
+            "insufficient funds"
+        );
 
         uint256 _txId = txCount + 1;
         Transaction storage trx = transactions[_txId];
-        
+
         trx.amount = _amount;
         trx.recipient = _recipient;
         trx.sender = msg.sender;
@@ -96,7 +107,10 @@ contract Multisig {
         Transaction storage trx = transactions[_txId];
 
         require(_txId != 0, "invalid tx id");
-        require(IERC20(trx.tokenAddress).balanceOf(address(this)) >= trx.amount, "insufficient funds");
+        require(
+            IERC20(trx.tokenAddress).balanceOf(address(this)) >= trx.amount,
+            "insufficient funds"
+        );
         require(!trx.details.isCompleted, "transaction already completed");
         require(trx.details.noOfApproval < quorum, "approvals already reached");
         require(isValidSigner[msg.sender], "not a valid signer");
@@ -108,19 +122,22 @@ contract Multisig {
         details.noOfApproval += 1;
         details.transactionSigners.push(msg.sender);
 
-        if(details.noOfApproval == quorum) {
+        if (details.noOfApproval == quorum) {
             details.isCompleted = true;
             IERC20(trx.tokenAddress).transfer(trx.recipient, trx.amount);
         }
     }
 
-     function updateQuorum(uint8 _quorum) external {
+    function updateQuorum(uint8 _quorum) external {
         require(msg.sender != address(0), "address zero found");
         require(isValidSigner[msg.sender], "unauthorized access");
         require(_quorum != quorum, "new quorum must not be old");
-        require(_quorum <= noOfValidSigners, "quorum cant be higher than noOfValidSigners");
+        require(
+            _quorum <= noOfValidSigners,
+            "quorum cant be higher than noOfValidSigners"
+        );
         require(_quorum != 0, "quorum cant be 0");
-        
+
         uint256 _reqId = txCount + 1;
         UpdateStat storage req = updateRequests[_reqId];
 
@@ -146,13 +163,15 @@ contract Multisig {
         req.details.noOfApproval = req.details.noOfApproval + 1;
         req.details.transactionSigners.push(msg.sender);
 
-        if(req.details.noOfApproval == quorum) {
+        if (req.details.noOfApproval == quorum) {
             req.details.isCompleted = true;
             quorum = req.newQuorum;
         }
     }
 
-    function getRequests(uint8 _reqId) external view returns(UpdateStat memory) {
+    function getRequests(
+        uint8 _reqId
+    ) external view returns (UpdateStat memory) {
         require(msg.sender != address(0), "address zero found");
         require(isValidSigner[msg.sender], "unathorized access");
         require(_reqId != 0, "invalid tx id");
